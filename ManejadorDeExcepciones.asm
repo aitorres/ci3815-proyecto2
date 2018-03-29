@@ -56,8 +56,6 @@ s2: .word 0
 	sw $v0 s1 # Not re-entrant and we can't trust $sp
 	sw $a0 s2 # But we need to use these registers
 	mfc0 $k0 $13 # Cause register
-	#srl $a0 $k0 2 # Extract ExcCode Field
-	#andi $a0 $a0 0x1f
 
 # Print information about exception.
 
@@ -95,9 +93,19 @@ ok_pc:
 	bne $a0 0 ret # 0 means exception was an interrupt
 	nop
 	
+Interrupcion:
+	li $v0, 11
+	lw $a0, 0xFFFF0004 
+	syscall
+	
+	sw $a0, Letra
+	
+	b retInt
 	
 # Interrupt-specific code goes here!
 # Don't skip instruction at EPC since it has not executed.
+
+
 
 # Manejador de telcado
 ## Manejador de Q, q
