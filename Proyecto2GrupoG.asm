@@ -7,7 +7,7 @@
 #	4.2) Unit Height in Pixels: 16
 #	4.3) Display Width in Pixels: 512
 #	4.4) Display Height in Pixels: 512
-#	4.5) Base address for display: 0x10040000 (heap)
+#	4.5) Base address for display: 0x10010000 (static data)
 # 5) Aumentar el tamaño del Bitmap Display para verlo completo
 # 6) En Tool Control, hacer click en Connect to MIPS
 # 7) Ensamblar
@@ -15,14 +15,16 @@
 ##################################################################
 
 .data
-Display: .word 0
-Tamano: .word 1024
+Display: .space 4096
+Tamano: .word 4096
 Inicio: .word 0
 Letra: .word 0
 Barra: .word 0
 UltimaFila: .word 3968
 Vx: .word 0
 Vy: .word 0
+Px: .word 0
+Py: .word 0
 Azul1: .word 0x000077
 Azul2: .word 0x0000a7
 Azul3: .word 0x0000f4
@@ -39,16 +41,8 @@ rightmessage: .asciiz "Te moviste a la derecha"
 pausemessage: .asciiz "Juego en pausa"  
 
 .text
-setup:	# Reservamos el Bitmap Display en el Heap
-	li $a0, 1024
-	li $v0, 9
-	syscall
-	
-	# Guardamos en la etiqueta DIsplay la dirección que obtuvimos del Heap
-	sw $v0, Display
-	
-	# Cargamos en $s0 la dirección del Bitmap Display
-	lw $s0, Display
+setup:	# Cargamos en $s0 la dirección del Bitmap Display
+	la $s0, Display
 	
 	# Cargamos en $t1 el tamaño en bloques del Display
 	lw $t1, Tamano
@@ -90,27 +84,35 @@ LadrillosCargados:
 	
 	# Pintamos el fondo, por motivos estéticos
 	# Hay que pintar 800 bloques
-	lw $t3, Gris
-	li $t9, 800
+	#lw $t3, Gris
+	#li $t9, 800
 	
 	pintarFondoloop:
-	beqz $t9, FondoPintado
-	sw $t3,  0($t2)
-	sw $t3,  4($t2)
-	sw $t3,  8($t2)
-	sw $t3, 12($t2)
+	#beqz $t9, FondoPintado
+	#sw $t3,  0($t2)
+	#sw $t3,  4($t2)
+	#sw $t3,  8($t2)
+	#sw $t3, 12($t2)
 	
-	addiu $t2, $t2, 16
-	addiu $t9, $t9, -4
-	b pintarFondoloop
+	#addiu $t2, $t2, 16
+	#addiu $t9, $t9, -4
+	#b pintarFondoloop
 
 FondoPintado:
-	addiu $t2, $t2, 128
+	addiu $t2, $t2, 3328
+	#addiu $t2, $t2, 128
 	
 	# Pintamos la pelota
 	lw $t3, Amarillo
 	sw $t3, 60($t2)
 	
+	li $t5, 15
+	li $t4, 30
+	
+	# Guardamos la ubicación de la pelota
+	sw $t5, Px
+	sw $t4, Py
+		
 	addiu $t2, $t2, 128
 	
 	# Pintamos la barra
@@ -128,11 +130,12 @@ FondoPintado:
 	li $t9, 52
 	sw $t9, Barra
 	
-	# Encendemos los bits 1 y 8 del registro Status
+	# Encendemos los bits 1, 8, 16 del registro Status
 	# El 1 para activar Interrupciones
 	# El 8 para pemitir interrupciones de nivel 1
+	# El 16 para encender el Timer
 	mfc0 $a0, $12
-	ori $a0, 0x101 
+	ori $a0, 0x8101 
 	mtc0 $a0, $12
 	
 	# Encendemos el bit 2 del Receiver Control para
@@ -141,9 +144,12 @@ FondoPintado:
 	sw $t0, 0xFFFF0000
 	
 	# Para imprimir mensajes al presionar teclas (debugging)
-	li $v0, 4
+	li $v0, 4 
 	
-	# Iterar hasta que se ingrese Q o q
+	li $t5, 1 #debug
+	sw $t5, Vx #debug
+	li $t6, 2 #debug
+	sw $t6, Vy #debug
 main:	
 	lw $s7, Letra
 	beq $s7, 81, fin
@@ -154,6 +160,11 @@ main:
 	
 	beq $s7, 68, letraD
 	beq $s7, 100, letraD
+	
+	li $a0, 1500
+	li $v0, 32
+	syscall
+	jal moverPelota	
 	
 	beq $s7, 32, pausarJuego
 	b main
@@ -206,7 +217,7 @@ redibujarBarra:
 	addiu $sp, $sp, -4
 	sw $ra, 0($sp)
 	
-	lw $t0, Display
+	la $t0, Display
 	lw $t1, UltimaFila
 	lw $t2, Barra
 	
@@ -246,6 +257,106 @@ moverDerecha:
 	retornarDer:
 	lw $ra, 0($sp)
 	addiu $sp, $sp, 4
+	
+	jr $ra
+	
+moverPelota:
+	addiu $sp, $sp, -4
+	sw $ra, 0($sp)
+
+	jal dibujarPuntoNegro
+	
+	lw $t0, Px
+	lw $t1, Py
+	
+	lw $t2, Vx
+	lw $t3, Vy
+	
+	fronteraX0:
+	bgtz $t0, fronteraX128
+	sub $t2, $0, $t2
+	sw $t2, Vx
+	b fronteraY0
+	
+	fronteraX128:
+	blt $t0, 128, fronteraY0
+	sub $t2, $0, $t2
+	sw $t2, Vx
+	b fronteraY0
+	
+	fronteraY0:
+	bgtz $t1, fronteraYfin
+	sub $t3, $0, $t3
+	sw $t3, Vy
+	b mover
+	
+	fronteraYfin:
+	blt $t1, 3968, mover
+	sub $t3, $0, $t3
+	sw $t3, Vy
+	b mover
+	
+	mover:
+	sub $t0, $t0, $t2
+	sub $t1, $t1, $t3
+	
+	sw $t0, Px
+	sw $t1, Py
+	
+	jal dibujarPelota
+	
+	lw $ra, 0($sp)
+	addiu $sp, $sp, 4
+	
+	jr $ra
+
+dibujarPuntoNegro:
+	addiu $sp, $sp, -4
+	sw $ra, 0($sp)
+	
+	lw $t0, Px
+	lw $t1, Py
+	
+	lw $t2, Negro
+	mul $t1, $t1, 128
+	mul $t0, $t0, 4
+	
+	la $t3, Display
+	add $t3, $t3, $t1
+	add $t3, $t3, $t0
+	sw $t2, 0($t3)
+	
+	lw $ra, 0($sp)
+	addiu $sp, $sp, 4
+	
+	jr $ra
+	
+dibujarPelota:
+	addiu $sp, $sp, -4
+	sw $ra, 0($sp)
+	
+	lw $t0, Px
+	lw $t1, Py
+	
+	lw $t2, Amarillo
+	
+	mul $t1, $t1, 128
+	mul $t0, $t0, 4
+	
+	la $t3, Display
+	add $t3, $t3, $t1
+	add $t3, $t3, $t0
+	sw $t2, 0($t3)
+	
+	lw $ra, 0($sp)
+	addiu $sp, $sp, 4
+	
+	jr $ra
+
+esperar:
+	mfc0 $t0, $9
+	add $t0, $t0, $a0
+	mtc0 $t0, $11
 	
 	jr $ra
 
