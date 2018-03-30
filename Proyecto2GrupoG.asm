@@ -23,25 +23,23 @@
 ##################################################################
 
 .data
-Display: .space 4096
-Inicio: .word 0
-Letra: .word 0
-Timer: .word 0
-Barra: .word 0
-Ladrillos: .word 128
-T: .word 10
-Incremento: .word 100
-UltimaFila: .word 3968
-Vx: .word 0
-Vy: .word 0
-Px: .word 0
-Py: .word 0
-Amarillo: .word 0xFFFF30
-Azul: .word 0x000077, 0x0000a7, 0x0000f4
-Verde: .word 0x005000, 0x008000, 0x00b000
-Gris: .word 0x111111
-Negro: .word 0x000000
-endmessage: .asciiz " for Quality!"
+Display: .space 4096 # Espacio reservado para el Display: 1024 bloques, a 4 bytes cada uno
+Pausa: .word 0 # Booleano, 1 si el juego está pausado, 0 si no
+Letra: .word 0 # Letra recibida y no procesada del teclado
+Timer: .word 0 # Booleano, señal del timer
+Barra: .word 0 # Posición del extremo izquierdo de la barra
+Ladrillos: .word 128 # Cantidad de ladrillos, si llega a 0 se gana el juego
+T: .word 10 # Velocidad medida en ciclos de reloj (inicial)
+Incremento: .word 100 # Incremento a la velocidad del juego 
+Vx: .word 0 # Desplazamiento en x de la bola
+Vy: .word 0 # Desplazamiento en y de la bola
+Px: .word 0 # Posición en x de la bola
+Py: .word 0 # Posición en y de la bla
+Amarillo: .word 0xFFFF30 # Color amarillo, para la bola
+Azul: .word 0x000077, 0x0000a7, 0x0000f4 # Colores azules, para la barra
+Verde: .word 0x005000, 0x008000, 0x00b000 # Colores verdes, para los ladrillos
+Negro: .word 0x000000 # Color gris, de fondo
+endmessage: .asciiz "¡HA FINALIZADO EL JUEGO"
 leftmessage: .asciiz "Te moviste a la izquierda"
 rightmessage: .asciiz "Te moviste a la derecha"
 pausemessage: .asciiz "Juego en pausa"  
@@ -338,6 +336,7 @@ splashScreen:
 	sw $t4, 108($s0)
 	addiu $s0, $s0, 128
 
+	# Loopeamos hasta que sea ingresada una tecla
 	splashLoop:
 	lw $s7, Letra
 	beqz $s7, splashLoop
@@ -444,85 +443,114 @@ iniciarJuego:
 	jal esperar
 	
 main:	
-	lw $s6, Timer
-	beqz $s6, noMover
+	pausado:
+	lw $s7, Letra # Cargamos la letra en $s7
 	
+	# Branch para el espacio
+	beq $s7, 32, pausarJuego
+	
+	# Verificamos si el juego está pausado
+	
+	lb $s5, Pausa
+	bnez $s5, pausado
+	
+	# Verificamos si el timer mandó una señal
+	lw $s6, Timer
+	beqz $s6, noMover # Si no hay señal, saltamos
+		
+	# Movemos la pelota de lugar 
 	jal moverPelota
-
+	
+	# Desmarcamos el Timer pues ya utilizamos esta señal
 	sw $0, Timer
-	jal esperar
+	jal esperar # Ponemos el timer a esperar de nuevo
 	
 	noMover:
-	lw $s7, Letra
+	lw $s7, Letra # Cargamos de nuevo la letra en $s7
+	
+	# Branch para la letra Q
 	beq $s7, 81, fin
 	beq $s7, 113, fin
 	
+	# Branch para la letra U
 	beq $s7, 85, incrementar
 	beq $s7, 117, incrementar
-	
+		
+	# Branch para la letra L
 	beq $s7, 76, decrementar
 	beq $s7, 108, decrementar
 
+	# Branch para la letra A
 	beq $s7, 65, letraA
 	beq $s7, 97, letraA
 	
+	# Branch para la letra D
 	beq $s7, 68, letraD
 	beq $s7, 100, letraD
 	
-	beq $s7, 32, pausarJuego
-	b main
+	b main # Loop
 	
-letraA:
+letraA: # Imprimimos un mensaje
 	la $a0, leftmessage
 	syscall
 	
+	# Saltamos a rutina para mover barra a izquierda
 	jal moverIzquierda
 
-	sw $0, Letra
-	b main
+	b retornarAMenu
 
-letraD:
+letraD: # Imprimios un mensaje
 	la $a0, rightmessage
 	syscall
 	
+	# Saltamos a rutina para mover barra a derecha
 	jal moverDerecha
 	
-	sw $0, Letra
-	b main
+	b retornarAMenu
 
 incrementar:
+	# Imprimimos un mensaje
 	la $a0, incrementarmessage
 	syscall
-
-	lw $t0, T
-	lw $t1, Incremento
-	add $t0, $t0, $t1
-	sw $t0, T
 	
-	sw $0, Letra
-	b main
+	# Realizamos el incremento
+	lw $t0, T # Cargamos T
+	lw $t1, Incremento # Cargamos el incremento
+	add $t0, $t0, $t1 # Sumamos ambos
+	sw $t0, T # Lo almacenamos en T
+	
+	b retornarAMenu
 	
 decrementar:
+	# Imprimimos un mensaje
 	la $a0, decrementarmessage
 	syscall
 	
-	lw $t0, T
-	lw $t1, Incremento
-	sub $t0, $t0, $t1
-	beqz $t0, retornarDecr
-	sw $t0, T
+	# Realizamos el decremento
+	lw $t0, T # Cargamos T
+	lw $t1, Incremento # Cargamos el incremento
+	sub $t0, $t0, $t1 # Restamos el incremento a T
+	beqz $t0, retornarAMenu # ¡Ojo! No podemos permitir velocidades negativas
+	sw $t0, T # Si no hicimos branch, lamacenamos en T
 	
-	retornarDecr:
-	sw $0, Letra
-	b main
+	b retornarAMenu
 
 pausarJuego:
+	# Imprimimos un mensaje
 	la $a0, pausemessage
 	syscall
 	
+	# Aplicamos un NOT al primer bit de Pausa
+	lb $t0, Pausa
+	not $t0, $t0
+	sb $t0, Pausa
+	
+	b retornarAMenu
+	
+retornarAMenu:
+	# Descartamos la letra y retornamos
 	sw $0, Letra
 	b main
-	
 	
 moverIzquierda:
 	addiu $sp, $sp, -4
@@ -547,7 +575,10 @@ redibujarBarra:
 	sw $ra, 0($sp)
 	
 	la $t0, Display
-	lw $t1, UltimaFila
+	
+	li $t1, 31 # Última fila del display
+	sll $t1, $t1, 7
+	
 	lw $t2, Barra
 	sll $t2, $t2, 2
 	
@@ -637,7 +668,7 @@ moverPelota:
 	lw $a0, Amarillo
 	jal dibujarPelotaConColor
 	
-	jal chequearAzul
+	#jal chequearAzul
 	
 	lw $ra, 0($sp)
 	addiu $sp, $sp, 4
