@@ -29,7 +29,8 @@ Letra: .word 0
 Timer: .word 0
 Barra: .word 0
 Ladrillos: .word 128
-T: .word 100
+T: .word 10
+Incremento: .word 100
 UltimaFila: .word 3968
 Vx: .word 0
 Vy: .word 0
@@ -45,6 +46,8 @@ leftmessage: .asciiz "Te moviste a la izquierda"
 rightmessage: .asciiz "Te moviste a la derecha"
 pausemessage: .asciiz "Juego en pausa"  
 pressanykey: .asciiz "Press the ANY key to start"
+incrementarmessage: .asciiz "¡Has incrementado la velocidad!"
+decrementarmessage: .asciiz "Has decrementado la velocidad..."
 
 .text
 setup:	
@@ -458,6 +461,12 @@ main:
 	lw $s7, Letra
 	beq $s7, 81, fin
 	beq $s7, 113, fin
+	
+	beq $s7, 85, incrementar
+	beq $s7, 117, incrementar
+	
+	beq $s7, 76, decrementar
+	beq $s7, 108, decrementar
 
 	beq $s7, 65, letraA
 	beq $s7, 97, letraA
@@ -482,6 +491,30 @@ letraD:
 	syscall
 	
 	jal moverDerecha
+	
+	sw $0, Letra
+	b main
+
+incrementar:
+	la $a0, incrementarmessage
+	syscall
+
+	lw $t0, T
+	lw $t1, Incremento
+	add $t0, $t0, $t1
+	sw $t0, T
+	
+	sw $0, Letra
+	b main
+	
+decrementar:
+	la $a0, decrementarmessage
+	syscall
+	
+	lw $t0, T
+	lw $t1, Incremento
+	sub $t0, $t0, $t1
+	sw $t0, T
 	
 	sw $0, Letra
 	b main
@@ -623,7 +656,7 @@ chequearAzul:
 	addi $t1, $t1, 1
 	
 	sll $t0, $t0, 7
-	sll $t1, $t1, 4
+	sll $t1, $t1, 2
 	lw $t2, Display
 	add $t2, $t2, $t0
 	add $t2, $t2, $t1
@@ -664,9 +697,8 @@ dibujarPelotaConColor:
 	jr $ra
 
 esperar:
-	mfc0 $t0, $9
-	add $t0, $t0, $a0
-	mtc0 $t0, $11
+	mtc0 $0, $9
+	mtc0 $a0, $11
 	
 	jr $ra
 

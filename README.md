@@ -9,6 +9,7 @@ bella y sensual sobrenatural
 - [ ] Pantalla de fin won game
 - [ ] Pantalla de fin game over
 - [ ] Llevar control de vidas
+- [ ] Problema con que la bola se para
 - [ ] Matar con las vidas por underflow
 - [ ] Control del T (uU, lL, incremento)
 - [x] Que el timer funcione bien, no solo la primer vez
