@@ -447,6 +447,8 @@ main:
 	beqz $s6, noMover
 	
 	jal moverPelota
+
+	sw $0, Timer
 		
 	lw $a0, T
 	sll $a0, $a0, 4
