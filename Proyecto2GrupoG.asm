@@ -52,10 +52,8 @@ setup:
 	# Preparamos una semilla aleatoria a partir del tiempo
 	li $v0, 30 
 	syscall
-	
-	b ganar
 
-	# Configuramos el generador de números aleatorios 1 con semilla
+		# Configuramos el generador de números aleatorios 1 con semilla
 	# correspondiente al entero del tiempo, que está en $a0
 	move $a1, $a0
 	li $a0, 1
