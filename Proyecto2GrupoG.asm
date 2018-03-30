@@ -53,7 +53,7 @@ setup:
 	li $v0, 30 
 	syscall
 
-		# Configuramos el generador de números aleatorios 1 con semilla
+	# Configuramos el generador de números aleatorios 1 con semilla
 	# correspondiente al entero del tiempo, que está en $a0
 	move $a1, $a0
 	li $a0, 1
@@ -476,12 +476,16 @@ iniciarJuego:
 	mtc0 $a0, $12
 	
 	# Para imprimir mensajes al presionar teclas (debugging)
-	li $v0, 4 
-	
+	li $v0, 4
+
 	# Ponemos al timer a esperar (part-debugging)
 	jal esperar
 	
-main:	
+main:
+	# Verificamos si el jugador ya ganó
+	lw $t0, Ladrillos
+	beqz $t0, ganar
+
 	pausado:
 	lw $s7, Letra # Cargamos la letra en $s7
 	
@@ -899,8 +903,18 @@ ganar:
 	sw $t1, 108($s0)
 	addiu $s0, $s0, 128
 
-	b fin
+	sw $s0, Letra
 
+	loopGameWon:
+	lw $s7, Letra
+	
+	# Branch para la letra Q
+	beq $s7, 81, fin
+	beq $s7, 113, fin
+
+	# Branch para cualquier otra letra
+	bnez $s7, setup
+	j loopGameWon
 
 esperar:
 	lw $t0, T
@@ -910,7 +924,6 @@ esperar:
 	jr $ra
 
 fin:	la $a0, endmessage
-	li $v0, 4
 	syscall
 	
 	li $v0, 10

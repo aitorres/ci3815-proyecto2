@@ -39,6 +39,7 @@ __excp: .word __e0_, __e1_, __e2_, __e3_, __e4_, __e5_, __e6_, __e7_, __e8_, __e
 .word __e28_, __e29_, __e30_, __e31_
 s1: .word 0
 s2: .word 0
+timsave: .word 0
 timermessage: .asciiz "TIMER!!!"
 
 # This is the exception handler code that the processor runs when
@@ -56,6 +57,9 @@ timermessage: .asciiz "TIMER!!!"
 .set at
 	sw $v0 s1 # Not re-entrant and we can't trust $sp
 	sw $a0 s2 # But we need to use these registers
+	
+	mfc0 $a0, $9
+	sw $a0, timsave # Save the timer
 	
 		# Disable interrupts
 	mfc0 $k0 $12
@@ -139,6 +143,8 @@ ret:
 
 # Restore registers and reset procesor state
 retInt:
+	lw $a0, timsave
+	mtc0 $a0, $9
 	lw $v0 s1 # Restore other registers
 	lw $a0 s2
 .set noat
