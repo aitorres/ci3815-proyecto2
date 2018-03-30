@@ -441,8 +441,6 @@ iniciarJuego:
 	li $v0, 4 
 	
 	# Ponemos al timer a esperar (part-debugging)
-	lw $a0, T
-	sll $a0, $a0, 4
 	jal esperar
 	
 main:	
@@ -452,9 +450,6 @@ main:
 	jal moverPelota
 
 	sw $0, Timer
-		
-	lw $a0, T
-	sll $a0, $a0, 4
 	jal esperar
 	
 	noMover:
@@ -514,8 +509,10 @@ decrementar:
 	lw $t0, T
 	lw $t1, Incremento
 	sub $t0, $t0, $t1
+	beqz $t0, retornarDecr
 	sw $t0, T
 	
+	retornarDecr:
 	sw $0, Letra
 	b main
 
@@ -581,7 +578,7 @@ moverDerecha:
 	sw $ra, 0($sp)
 	
 	lw $t0, Barra
-	beq, $t0, 108, retornarDer
+	beq, $t0, 27, retornarDer
 	
 	addiu $t0, $t0, 1
 	sw $t0, Barra
@@ -657,7 +654,7 @@ chequearAzul:
 	
 	sll $t0, $t0, 7
 	sll $t1, $t1, 2
-	lw $t2, Display
+	la $t2, Display
 	add $t2, $t2, $t0
 	add $t2, $t2, $t1
 	
@@ -668,6 +665,7 @@ chequearAzul:
 	# debo dar distitnas velocidades, esto es debgging
 	lw $t2, Vy
 	sub $t2, $0, $t2
+	sw $t2, Vy
 	
 	chequearRet:
 	lw $ra, 0($sp)
@@ -697,8 +695,9 @@ dibujarPelotaConColor:
 	jr $ra
 
 esperar:
+	lw $t0, T
 	mtc0 $0, $9
-	mtc0 $a0, $11
+	mtc0 $t0, $11
 	
 	jr $ra
 
