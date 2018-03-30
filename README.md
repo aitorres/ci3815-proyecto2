@@ -15,6 +15,6 @@ bella y sensual sobrenatural
 - [x] Que el timer funcione bien, no solo la primer vez
 - [ ] Musiquita
 - [ ] A e s t h e t i c s
-- [ ] Pausar / despausar
+- [x] Pausar / despausar
 - [ ] Informe
 - [ ] Debuggear
