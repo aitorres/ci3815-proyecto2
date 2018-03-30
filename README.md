@@ -11,7 +11,7 @@ bella y sensual sobrenatural
 - [ ] Llevar control de vidas
 - [ ] Matar con las vidas por underflow
 - [ ] Control del T (uU, lL, incremento)
-- [ ] Que el timer funcione bien, no solo la primer vez
+- [x] Que el timer funcione bien, no solo la primer vez
 - [ ] Musiquita
 - [ ] A e s t h e t i c s
 - [ ] Pausar / despausar
