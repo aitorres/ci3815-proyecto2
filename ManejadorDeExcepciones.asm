@@ -39,6 +39,7 @@ __excp: .word __e0_, __e1_, __e2_, __e3_, __e4_, __e5_, __e6_, __e7_, __e8_, __e
 .word __e28_, __e29_, __e30_, __e31_
 s1: .word 0
 s2: .word 0
+timermessage: .asciiz "TIMER!!!"
 
 # This is the exception handler code that the processor runs when
 # an exception occurs. It only prints some information about the
@@ -55,6 +56,12 @@ s2: .word 0
 .set at
 	sw $v0 s1 # Not re-entrant and we can't trust $sp
 	sw $a0 s2 # But we need to use these registers
+	
+		# Disable interrupts
+	mfc0 $k0 $12
+	andi $k0 0xfffffffe
+	mtc0 $k0 $12
+	
 	mfc0 $k0 $13 # Cause register
 
 # Print information about exception.
@@ -94,23 +101,28 @@ ok_pc:
 	nop
 	
 Interrupcion:
+	# Verificamos si la interrupción es de teclado
+	IntTeclado:
+	lw $a0, 0xFFFF0000
+	andi $a0, $a0, 0x1
+	beqz $a0, IntTimer
+
 	li $v0, 11
 	lw $a0, 0xFFFF0004 
 	syscall
 	
 	sw $a0, Letra
-	
 	b retInt
 	
-# Interrupt-specific code goes here!
-# Don't skip instruction at EPC since it has not executed.
-
-
-
-# Manejador de telcado
-## Manejador de Q, q
-## Manejador de A, a
-## Manejador de D, d
+	IntTimer:
+	li $v0, 1
+	sw $v0, Timer
+	
+	li $v0, 4
+	la $a0, timermessage
+	syscall
+	
+	b retInt
 
 # Manejador del timer
 
