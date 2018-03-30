@@ -53,6 +53,8 @@ setup:
 	li $v0, 30 
 	syscall
 	
+	b ganar
+
 	# Configuramos el generador de números aleatorios 1 con semilla
 	# correspondiente al entero del tiempo, que está en $a0
 	move $a1, $a0
@@ -400,27 +402,9 @@ splashScreen:
 	sw $s0, Letra
 	
 dibujarTablero:
-	# Cargamos en $s0 la dirección del Bitmap Display
-	la $s0, Display
-
-	# Reiniciamos el tablero en negro
-	lw $t2, Negro
-	li $t9, 1024
-	loopNegrear:
-	beqz $t9, finNegrear
-	sw $t2,  0($s0)
-	sw $t2,  4($s0)
-	sw $t2,  8($s0)
-	sw $t2, 12($s0)
-	sw $t2, 16($s0)
-	sw $t2, 20($s0)
-	sw $t2, 24($s0)
-	sw $t2, 28($s0)
-	addiu $t9, $t9, -8
-	addiu $s0, $s0, 32
-	b loopNegrear
-
-	finNegrear:
+	# Coloreamos todo de negro
+	lw $a0, Negro
+	jal rellenarDeColor
 
 	# Cargamos en $s0 la dirección del Bitmap Display
 	la $s0, Display
@@ -682,13 +666,6 @@ moverPelota:
 	addiu $sp, $sp, -4
 	sw $ra, 0($sp)
 	
-	li $v0, 31
-	li $a0, 12
-	li $a1, 350
-	li $a2, 112
-	li $a3, 100
-	syscall
-	
 	lw $t0, Px
 	lw $t1, Py
 	
@@ -788,6 +765,144 @@ dibujarPelotaConColor:
 	addiu $sp, $sp, 4
 	
 	jr $ra
+
+# Recibe en $a0 la palabra de un color
+rellenarDeColor:
+	# Cargamos en $s0 la dirección del Bitmap Display
+	la $t0, Display
+
+	li $t9, 1024
+	loopRellenar:
+	beqz $t9, finRellenar
+	sw $a0,  0($t0)
+	sw $a0,  4($t0)
+	sw $a0,  8($t0)
+	sw $a0, 12($t0)
+	sw $a0, 16($t0)
+	sw $a0, 20($t0)
+	sw $a0, 24($t0)
+	sw $a0, 28($t0)
+	addiu $t9, $t9, -8
+	addiu $t0, $t0, 32
+	b loopRellenar
+
+	finRellenar:
+	jr $ra
+
+ganar:
+	# Apagamos las interrupciones
+	mfc0 $t0, $12
+	andi $t0, $t0, 0
+	mtc0 $t0, $12
+
+	# Dibujamos la pantalla de ganador: rellenamos la pantalla de verde
+	lw $a0, Verde
+	jal rellenarDeColor
+
+	# Cargamos los colores en $t1, $t2
+	lw $t1, Amarillo
+	
+	# Escribimos YOU
+	la $s0, Display
+
+	li $t0, 1280
+	add $s0, $s0, $t0
+
+	sw $t1, 16($s0)
+	sw $t1, 24($s0)
+	sw $t1, 36($s0)
+	sw $t1, 40($s0)
+	sw $t1, 52($s0)
+	sw $t1, 64($s0)
+	addiu $s0, $s0, 128
+
+	sw $t1, 16($s0)
+	sw $t1, 24($s0)
+	sw $t1, 32($s0)
+	sw $t1, 44($s0)
+	sw $t1, 52($s0)
+	sw $t1, 64($s0)
+	addiu $s0, $s0, 128
+
+	sw $t1, 16($s0)
+	sw $t1, 24($s0)
+	sw $t1, 32($s0)
+	sw $t1, 44($s0)
+	sw $t1, 52($s0)
+	sw $t1, 64($s0)
+	addiu $s0, $s0, 128
+
+	sw $t1, 20($s0)
+	sw $t1, 32($s0)
+	sw $t1, 44($s0)
+	sw $t1, 52($s0)
+	sw $t1, 64($s0)
+	addiu $s0, $s0, 128
+
+	sw $t1, 20($s0)
+	sw $t1, 36($s0)
+	sw $t1, 40($s0)
+	sw $t1, 52($s0)
+	sw $t1, 56($s0)
+	sw $t1, 60($s0)
+	sw $t1, 64($s0)
+	addiu $s0, $s0, 128
+
+	addiu $s0, $s0, 128
+
+	# Escribimos "Won !"
+
+	sw $t1, 40($s0)
+	sw $t1, 56($s0)
+	sw $t1, 68($s0)
+	sw $t1, 72($s0)
+	sw $t1, 84($s0)
+	sw $t1, 100($s0)
+	sw $t1, 108($s0)
+	addiu $s0, $s0, 128
+
+	sw $t1, 40($s0)
+	sw $t1, 56($s0)
+	sw $t1, 64($s0)
+	sw $t1, 76($s0)
+	sw $t1, 84($s0)
+	sw $t1, 88($s0)
+	sw $t1, 100($s0)
+	sw $t1, 108($s0)
+	addiu $s0, $s0, 128
+
+	sw $t1, 40($s0)
+	sw $t1, 48($s0)
+	sw $t1, 56($s0)
+	sw $t1, 64($s0)
+	sw $t1, 76($s0)
+	sw $t1, 84($s0)
+	sw $t1, 92($s0)
+	sw $t1, 100($s0)
+	sw $t1, 108($s0)
+	addiu $s0, $s0, 128
+
+	sw $t1, 40($s0)
+	sw $t1, 48($s0)
+	sw $t1, 56($s0)
+	sw $t1, 64($s0)
+	sw $t1, 76($s0)
+	sw $t1, 84($s0)
+	sw $t1, 96($s0)
+	sw $t1, 100($s0)
+	addiu $s0, $s0, 128
+
+	sw $t1, 44($s0)
+	sw $t1, 52($s0)
+	sw $t1, 68($s0)
+	sw $t1, 72($s0)
+	sw $t1, 84($s0)
+	sw $t1, 100($s0)
+	sw $t1, 108($s0)
+	addiu $s0, $s0, 128
+
+	b fin
+
 
 esperar:
 	lw $t0, T

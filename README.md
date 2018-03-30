@@ -6,7 +6,7 @@ bella y sensual sobrenatural
 - [ ] Cambiar de posición (reacción) al chocar con barra
 - [ ] Contar los bloques chocados
 - [x] Pantalla de inicio
-- [ ] Pantalla de fin won game
+- [x] Pantalla de fin won game
 - [ ] Pantalla de fin game over
 - [ ] Llevar control de vidas
 - [ ] Problema con que la bola se para
