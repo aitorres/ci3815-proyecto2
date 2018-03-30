@@ -13,7 +13,7 @@ bella y sensual sobrenatural
 - [ ] Matar con las vidas por underflow
 - [ ] Control del T (uU, lL, incremento)
 - [x] Que el timer funcione bien, no solo la primer vez
-- [ ] Musiquita
+- [x] Musiquita
 - [ ] A e s t h e t i c s
 - [x] Pausar / despausar
 - [ ] Informe

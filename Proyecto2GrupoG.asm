@@ -335,6 +335,63 @@ splashScreen:
 	sw $t4,  96($s0)
 	sw $t4, 108($s0)
 	addiu $s0, $s0, 128
+	
+	# Reproducimos sonido
+	li $v0, 33
+	li $a0, 69
+	li $a1, 250
+	li $a2, 0
+	li $a3, 100
+	syscall
+	
+	li $v0, 33
+	li $a0, 64
+	li $a1, 360
+	li $a2, 0
+	li $a3, 100
+	syscall
+	
+	li $v0, 33
+	li $a0, 69
+	li $a1, 200
+	li $a2, 0
+	li $a3, 100
+	syscall
+	
+	li $v0, 33
+	li $a0, 69
+	li $a1, 200
+	li $a2, 0
+	li $a3, 100
+	syscall
+	
+	li $v0, 33
+	li $a0, 71
+	li $a1, 200
+	li $a2, 0
+	li $a3, 100
+	syscall
+	
+	li $v0, 33
+	li $a0, 73
+	li $a1, 200
+	li $a2, 0
+	li $a3, 100
+	syscall
+	
+	li $v0, 33
+	li $a0, 74
+	li $a1, 200
+	li $a2, 0
+	li $a3, 100
+	syscall
+	
+	li $v0, 33
+	li $a0, 76
+	li $a1, 350
+	li $a2, 0
+	li $a3, 100
+	syscall
 
 	# Loopeamos hasta que sea ingresada una tecla
 	splashLoop:
@@ -624,6 +681,13 @@ moverDerecha:
 moverPelota:
 	addiu $sp, $sp, -4
 	sw $ra, 0($sp)
+	
+	li $v0, 31
+	li $a0, 12
+	li $a1, 350
+	li $a2, 112
+	li $a3, 100
+	syscall
 	
 	lw $t0, Px
 	lw $t1, Py
