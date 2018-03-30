@@ -3,11 +3,19 @@
 # 2) En Tool Control, hacer click en Connect to MIPS
 # 3) Abrir Tools > Bitmap Display
 # 4) Ajustar los valores:
-#	4.1) Unit Width in Pixels: 16
-#	4.2) Unit Height in Pixels: 16
-#	4.3) Display Width in Pixels: 512
-#	4.4) Display Height in Pixels: 512
-#	4.5) Base address for display: 0x10010000 (static data)
+#	OPCIÓN 1 (grande)
+#	4.1.1) Unit Width in Pixels: 16
+#	4.1.2) Unit Height in Pixels: 16
+#	4.1.3) Display Width in Pixels: 512
+#	4.1.4) Display Height in Pixels: 512
+
+#	OPCIÓN 2
+#	4.2.1) Unit Width in Pixels: 8
+#	4.2.2) Unit Height in Pixels: 8
+#	4.2.3) Display Width in Pixels: 256
+#	4.2.4) Display Height in Pixels: 256
+
+#	4.3) Base address for display: 0x10010000 (static data)
 # 5) Aumentar el tamaño del Bitmap Display para verlo completo
 # 6) En Tool Control, hacer click en Connect to MIPS
 # 7) Ensamblar
@@ -19,15 +27,16 @@ Display: .space 4096
 Tamano: .word 4096
 Inicio: .word 0
 Letra: .word 0
+Timer: .word 0
 Barra: .word 0
+Ladrillos: .word 128
+T: .word 2
 UltimaFila: .word 3968
 Vx: .word 0
 Vy: .word 0
 Px: .word 0
 Py: .word 0
-Azul1: .word 0x000077
-Azul2: .word 0x0000a7
-Azul3: .word 0x0000f4
+Azul: .word 0x000077, 0x0000a7, 0x0000f4
 Amarillo: .word 0xFFFF30
 Verde1: .word 0x005000
 Verde2: .word 0x008000
@@ -39,9 +48,40 @@ endmessage: .asciiz " for Quality!"
 leftmessage: .asciiz "Te moviste a la izquierda"
 rightmessage: .asciiz "Te moviste a la derecha"
 pausemessage: .asciiz "Juego en pausa"  
+pressanykey: .asciiz "Press the ANY key to start"
 
 .text
-setup:	# Cargamos en $s0 la dirección del Bitmap Display
+setup:	
+	# Preparamos una semilla aleatoria a partir del tiempo
+	li $v0, 30 
+	syscall
+	
+	# Configuramos el generador de números aleatorios 1 con semilla
+	# correspondiente al entero del tiempo, que está en $a0
+	move $a1, $a0
+	li $a0, 1
+	li $v0, 40
+	syscall
+	
+	# Generamos un entero entre -1 y 1 para Vx
+	li $a0, 1
+	li $a1, 2
+	li $v0, 42
+	syscall
+	
+	subi $a0, $a0, 1
+	sw $a0, Vx
+	
+	# Generamos un entero no nulo entre 1 y 2 para Vy (tiene que subir al principio)
+	li $a0, 1
+	li $a1, 1
+	li $v0, 42
+	syscall
+	
+	addi $a0, $a0, 1
+	sw $a0, Vy	
+	
+	# Cargamos en $s0 la dirección del Bitmap Display
 	la $s0, Display
 	
 	# Cargamos en $t1 el tamaño en bloques del Display
@@ -81,26 +121,7 @@ CargarLadrillos:
 	b cargarLoop
 			
 LadrillosCargados:
-	
-	# Pintamos el fondo, por motivos estéticos
-	# Hay que pintar 800 bloques
-	#lw $t3, Gris
-	#li $t9, 800
-	
-	pintarFondoloop:
-	#beqz $t9, FondoPintado
-	#sw $t3,  0($t2)
-	#sw $t3,  4($t2)
-	#sw $t3,  8($t2)
-	#sw $t3, 12($t2)
-	
-	#addiu $t2, $t2, 16
-	#addiu $t9, $t9, -4
-	#b pintarFondoloop
-
-FondoPintado:
 	addiu $t2, $t2, 3328
-	#addiu $t2, $t2, 128
 	
 	# Pintamos la pelota
 	lw $t3, Amarillo
@@ -116,9 +137,9 @@ FondoPintado:
 	addiu $t2, $t2, 128
 	
 	# Pintamos la barra
-	lw $t3, Azul1
-	lw $t4, Azul2
-	lw $t5, Azul3
+	lw $t3, Azul
+	lw $t4, Azul+4
+	lw $t5, Azul+8
 	
 	sw $t3, 52($t2)
 	sw $t4, 56($t2)
@@ -143,14 +164,35 @@ FondoPintado:
 	li $t0, 2
 	sw $t0, 0xFFFF0000
 	
+splashScreen:
+	# Mostramos un mensaje en terminal para que presione en teclado cualquier letra
+	la $a0, pressanykey # debería ser una pantalla distinta
+	li $v0 4
+	syscall
+	
+	splashLoop:
+	lw $s7, Letra
+	beqz $s7, splashLoop
+	sw $s0, Letra
+	
+	iniciarJuego:
 	# Para imprimir mensajes al presionar teclas (debugging)
 	li $v0, 4 
 	
-	li $t5, 1 #debug
-	sw $t5, Vx #debug
-	li $t6, 2 #debug
-	sw $t6, Vy #debug
+	# Ponemos al timer a esperar (part-debugging)
+	lw $a0, T
+	jal esperar
+	
 main:	
+	lw $s6, Timer
+	beqz $s6, noMover
+	
+	jal moverPelota
+		
+	lw $a0, T
+	jal esperar
+	
+	noMover:
 	lw $s7, Letra
 	beq $s7, 81, fin
 	beq $s7, 113, fin
@@ -160,11 +202,6 @@ main:
 	
 	beq $s7, 68, letraD
 	beq $s7, 100, letraD
-	
-	li $a0, 1500
-	li $v0, 32
-	syscall
-	jal moverPelota	
 	
 	beq $s7, 32, pausarJuego
 	b main
@@ -225,9 +262,9 @@ redibujarBarra:
 	add $t0, $t0, $t2
 	
 	# Pintamos la barra
-	lw $t3, Azul1
-	lw $t4, Azul2
-	lw $t5, Azul3
+	lw $t3, Azul
+	lw $t4, Azul+4
+	lw $t5, Azul+8
 	lw $t6, Negro
 	
 	sw $t6, -4($t0)
@@ -263,8 +300,6 @@ moverDerecha:
 moverPelota:
 	addiu $sp, $sp, -4
 	sw $ra, 0($sp)
-
-	jal dibujarPuntoNegro
 	
 	lw $t0, Px
 	lw $t1, Py
@@ -279,7 +314,7 @@ moverPelota:
 	b fronteraY0
 	
 	fronteraX128:
-	blt $t0, 128, fronteraY0
+	blt $t0, 32, fronteraY0
 	sub $t2, $0, $t2
 	sw $t2, Vx
 	b fronteraY0
@@ -291,17 +326,19 @@ moverPelota:
 	b mover
 	
 	fronteraYfin:
-	blt $t1, 3968, mover
+	blt $t1, 32, mover
 	sub $t3, $0, $t3
 	sw $t3, Vy
 	b mover
 	
 	mover:
-	sub $t0, $t0, $t2
-	sub $t1, $t1, $t3
+	sub $s1, $t0, $t2
+	sub $s2, $t1, $t3
 	
-	sw $t0, Px
-	sw $t1, Py
+	jal dibujarPuntoNegro
+	
+	sw $s1, Px
+	sw $s2, Py
 	
 	jal dibujarPelota
 	
