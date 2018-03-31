@@ -613,6 +613,23 @@ moverIzquierda:
 	jr $ra
 
 
+moverDerecha:
+	addiu $sp, $sp, -4
+	sw $ra, 0($sp)
+	
+	lw $t0, Barra
+	beq, $t0, 27, retornarDer
+	
+	addiu $t0, $t0, 1
+	sw $t0, Barra
+	jal redibujarBarra
+	
+	retornarDer:
+	lw $ra, 0($sp)
+	addiu $sp, $sp, 4
+	
+	jr $ra
+
 redibujarBarra:
 	addiu $sp, $sp, -4
 	sw $ra, 0($sp)
@@ -642,23 +659,6 @@ redibujarBarra:
 	sw $t3, 16($t0)
 	sw $t6, 20($t0)
 	
-	lw $ra, 0($sp)
-	addiu $sp, $sp, 4
-	
-	jr $ra
-
-moverDerecha:
-	addiu $sp, $sp, -4
-	sw $ra, 0($sp)
-	
-	lw $t0, Barra
-	beq, $t0, 27, retornarDer
-	
-	addiu $t0, $t0, 1
-	sw $t0, Barra
-	jal redibujarBarra
-	
-	retornarDer:
 	lw $ra, 0($sp)
 	addiu $sp, $sp, 4
 	
