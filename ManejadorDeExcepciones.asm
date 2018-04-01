@@ -116,6 +116,12 @@ Interrupcion:
 	syscall
 	
 	sw $a0, Letra
+	# mfc0 $a0, $9
+	# mfc0 $v0, $11
+	# blt $a0, $v0, retInt  
+	# lw $a0, T
+	# mtc0 $0, $9
+	# mtc0 $a0, $11
 	b retInt
 	
 	IntTimer:
