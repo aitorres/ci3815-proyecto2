@@ -34,12 +34,13 @@ Timer: .word 0 # Booleano, señal del timer
 Barra: .word 0 # Posición del extremo izquierdo de la barra
 Ladrillos: .word 128 # Cantidad de ladrillos, si llega a 0 se gana el juego
 Choque: .word 0 # Booleano, si ocurrió o no un choque en un momento dado
-T: .word 100 # Velocidad medida en ciclos de reloj (inicial)
+T: .word 10 # Velocidad medida en ciclos de reloj (inicial)
 Incremento: .word 100 # Incremento a la velocidad del juego 
 Vx: .word 0 # Desplazamiento en x de la bola
 Vy: .word 0 # Desplazamiento en y de la bola
 Px: .word 0 # Posición en x de la bola
 Py: .word 0 # Posición en y de la bla
+Vidas: .word 3
 Amarillo: .word 0xFFFF30 # Color amarillo, para la bola
 Azul: .word 0x000077, 0x0000a7, 0x0000f4 # Colores azules, para la barra
 Verde: .word 0x005000, 0x008000, 0x00b000 # Colores verdes, para los ladrillos
@@ -54,6 +55,16 @@ decrementarmessage: .asciiz "Has decrementado la velocidad..."
 
 .text
 setup:	
+	# Configuramos las variables por si perdió o quiere jugar de nuevo
+	li $v0, 100
+	sw $v0, Incremento
+
+	li $v0, 100 # ¡Ojo!
+	sw $v0, T
+
+	li $v0, 128
+	sw $v0, Ladrillos
+
 	# Preparamos una semilla aleatoria a partir del tiempo
 	li $v0, 30 
 	syscall
@@ -950,7 +961,22 @@ ganar:
 	sw $t1, 108($s0)
 	addiu $s0, $s0, 128
 
-	j fin
+	# Reiniciamos las vidas por si quiere volver a jugar
+	li $v0, 3
+	sw $v0, Vidas
+
+	sw $s0, Letra
+
+	loopGameWon:
+	lw $s7, Letra
+
+	# Branch para la letra Q
+	beq $s7, 81, fin
+	beq $s7, 113, fin
+
+	# Branch para cualquier otra letra
+	bnez $s7, setup
+	j loopGameWon
 
 perder:
 	li $v0, 33
@@ -974,7 +1000,24 @@ perder:
 	li $a3, 100
 	syscall
 
-	j fin
+	# Descontamos una vida y si perdió definitivamente, cierra el juego
+	lw $v0, Vidas
+	addi $v0, $v0, -1
+	beqz $v0, fin
+	sw $v0, Vidas
+
+	sw $s0, Letra
+
+	loopGameLost:
+	lw $s7, Letra
+	
+	# Branch para la letra Q
+	beq $s7, 81, fin
+	beq $s7, 113, fin
+
+	# Branch para cualquier otra letra
+	bnez $s7, setup
+	j loopGameLost
 
 esperar:
 	lw $t0, T
