@@ -344,56 +344,56 @@ splashScreen:
 	# Reproducimos sonido
 	li $v0, 33
 	li $a0, 69
-	li $a1, 250
+	li $a1, 200
 	li $a2, 0
 	li $a3, 100
 	syscall
 	
 	li $v0, 33
 	li $a0, 64
-	li $a1, 360
+	li $a1, 310
 	li $a2, 0
 	li $a3, 100
 	syscall
 	
 	li $v0, 33
 	li $a0, 69
-	li $a1, 200
+	li $a1, 150
 	li $a2, 0
 	li $a3, 100
 	syscall
 	
 	li $v0, 33
 	li $a0, 69
-	li $a1, 200
+	li $a1, 150
 	li $a2, 0
 	li $a3, 100
 	syscall
 	
 	li $v0, 33
 	li $a0, 71
-	li $a1, 200
+	li $a1, 150
 	li $a2, 0
 	li $a3, 100
 	syscall
 	
 	li $v0, 33
 	li $a0, 73
-	li $a1, 200
+	li $a1, 150
 	li $a2, 0
 	li $a3, 100
 	syscall
 	
 	li $v0, 33
 	li $a0, 74
-	li $a1, 200
+	li $a1, 150
 	li $a2, 0
 	li $a3, 100
 	syscall
 	
 	li $v0, 33
 	li $a0, 76
-	li $a1, 350
+	li $a1, 260
 	li $a2, 0
 	li $a3, 100
 	syscall
@@ -950,35 +950,31 @@ ganar:
 	sw $t1, 108($s0)
 	addiu $s0, $s0, 128
 
-	sw $s0, Letra
-
-	loopGameWon:
-	lw $s7, Letra
-	
-	# Branch para la letra Q
-	beq $s7, 81, fin
-	beq $s7, 113, fin
-
-	# Branch para cualquier otra letra
-	bnez $s7, setup
-	j loopGameWon
+	j fin
 
 perder:
-	loopGameLost:
-	lw $s7, Letra
+	li $v0, 33
+	li $a0, 36
+	li $a1, 200
+	li $a2, 0
+	li $a3, 100
+	syscall
 	
-	# Branch para la letra Q
-	beq $s7, 81, fin
-	beq $s7, 113, fin
+	li $v0, 33
+	li $a0, 36
+	li $a1, 200
+	li $a2, 0
+	li $a3, 100
+	syscall
 
-	# Branch para cualquier otra letra
-	bnez $s7, perderPreSalto
-	j loopGameLost
-	
-	perderPreSalto:
-	move $a0, $0
-	jal rellenarDeColor
-	j setup
+	li $v0, 33
+	li $a0, 38
+	li $a1, 250
+	li $a2, 0
+	li $a3, 100
+	syscall
+
+	j fin
 
 esperar:
 	lw $t0, T
