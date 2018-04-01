@@ -1,3 +1,7 @@
+######################### PROYECTO 2 ############################
+# Organización del Computador (CI-3815)
+# Andrés Ignacio Torres (14-11082)
+# Mario Quintero (13-11148)
 ######################### INSTRUCCIONES #########################
 # 1) Abrir Tools > Keyboard and Display MMIO Simulator
 # 2) En Tool Control, hacer click en Connect to MIPS
@@ -29,7 +33,8 @@ Letra: .word 0 # Letra recibida y no procesada del teclado
 Timer: .word 0 # Booleano, señal del timer
 Barra: .word 0 # Posición del extremo izquierdo de la barra
 Ladrillos: .word 128 # Cantidad de ladrillos, si llega a 0 se gana el juego
-T: .word 10 # Velocidad medida en ciclos de reloj (inicial)
+Choque: .word 0 # Booleano, si ocurrió o no un choque en un momento dado
+T: .word 100 # Velocidad medida en ciclos de reloj (inicial)
 Incremento: .word 100 # Incremento a la velocidad del juego 
 Vx: .word 0 # Desplazamiento en x de la bola
 Vy: .word 0 # Desplazamiento en y de la bola
@@ -674,6 +679,9 @@ moverPelota:
 	lw $t2, Vx
 	lw $t3, Vy
 	
+	move $s3, $t2
+	move $s4, $t3
+	
 	fronteraX0:
 	bgtz $t0, fronteraX128
 	sub $t2, $0, $t2
@@ -694,10 +702,10 @@ moverPelota:
 	
 	fronteraYfin:
 	blt $t1, 31, mover
-	sub $t3, $0, $t3
-	sw $t3, Vy
-	b mover
-	
+	#sub $t3, $0, $t3
+	#sw $t3, Vy
+	b perder
+		
 	mover:
 	sub $s1, $t0, $t2
 	sub $s2, $t1, $t3
@@ -707,16 +715,55 @@ moverPelota:
 	
 	sw $s1, Px
 	sw $s2, Py
-	
+		
 	lw $a0, Amarillo
 	jal dibujarPelotaConColor
 	
-	#jal chequearAzul
+	#jal chequearVerde
 	
+	#lw $t9, Choque
+	#bne $t9, 1, regresarMover
+	
+	#lw $t0, Vx
+	#lw $t1, Vy
+	
+	#bne $t1, $s4, regresarMover
+	#sub $t1, $s0, $t1
+	#sw $t1, Vy	
+	#sw $0, Choque
+	# Si no cambié velocidad, la cambio
+	
+	jal chequearAzul
+	
+	regresarMover:
 	lw $ra, 0($sp)
 	addiu $sp, $sp, 4
 	
 	jr $ra
+	
+chequearVerde:
+	lw $t8, Display
+	
+	lw $t0, Px
+	lw $t1, Py
+	
+	addiu $t0, $t0, -1
+	
+	sll $t0, $t0, 7
+	sll $t1, $t1, 2
+	
+	add $t8, $t8, $t0
+	add $t8, $t8, $t1 
+	
+	lw $t9, Verde
+	
+	bne $t8, $t9, regresarCheq
+	addiu $t9, $0, 1
+	sb $t9, Choque	
+	
+	regresarCheq:
+	jr $ra
+	
 	
 chequearAzul:
 	addiu $sp, $sp, -4
@@ -915,6 +962,23 @@ ganar:
 	# Branch para cualquier otra letra
 	bnez $s7, setup
 	j loopGameWon
+
+perder:
+	loopGameLost:
+	lw $s7, Letra
+	
+	# Branch para la letra Q
+	beq $s7, 81, fin
+	beq $s7, 113, fin
+
+	# Branch para cualquier otra letra
+	bnez $s7, perderPreSalto
+	j loopGameLost
+	
+	perderPreSalto:
+	move $a0, $0
+	jal rellenarDeColor
+	j setup
 
 esperar:
 	lw $t0, T
