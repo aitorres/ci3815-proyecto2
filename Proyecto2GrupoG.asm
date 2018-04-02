@@ -2,6 +2,7 @@
 # Organización del Computador (CI-3815)
 # Andrés Ignacio Torres (14-11082)
 # Mario Quintero (13-11148)
+
 ######################### INSTRUCCIONES #########################
 # 1) Abrir Tools > Keyboard and Display MMIO Simulator
 # 2) En Tool Control, hacer click en Connect to MIPS
@@ -32,9 +33,9 @@ Pausa: .word 0 # Booleano, 1 si el juego está pausado, 0 si no
 Letra: .word 0 # Letra recibida y no procesada del teclado
 Timer: .word 0 # Booleano, señal del timer
 Barra: .word 0 # Posición del extremo izquierdo de la barra
-Ladrillos: .word 128 # Cantidad de ladrillos, si llega a 0 se gana el juego
+Ladrillos: .word 3 # Cantidad de ladrillos, si llega a 0 se gana el juego
 Choque: .word 0 # Booleano, si ocurrió o no un choque en un momento dado
-T: .word 200 # Velocidad medida en ciclos de reloj (inicial)
+T: .word 25 # Velocidad medida en ciclos de reloj (inicial)
 Incremento: .word 100 # Incremento a la velocidad del juego 
 Vx: .word 0 # Desplazamiento en x de la bola
 Vy: .word 0 # Desplazamiento en y de la bola
@@ -55,6 +56,9 @@ decrementarmessage: .asciiz "Has decrementado la velocidad..."
 .text
 setup:	
 	sw $0, Letra
+	
+	move $a0, $0
+	jal rellenarDeColor
 
 	# Configuramos las variables por si perdió o quiere jugar de nuevo
 	li $v0, 128
@@ -516,6 +520,8 @@ main:
 		
 	# Movemos la pelota de lugar 
 	jal moverPelota
+	jal chequearAzul
+	jal chequearVerde
 	
 	# Desmarcamos el Timer pues ya utilizamos esta señal
 	sw $0, Timer
@@ -672,6 +678,10 @@ redibujarBarra:
 	sw $t3, 16($t0)
 	sw $t6, 20($t0)
 	
+	move $t3, $0
+	move $t4, $0
+	move $t5, $0
+
 	lw $ra, 0($sp)
 	addiu $sp, $sp, 4
 	
@@ -680,7 +690,7 @@ redibujarBarra:
 moverPelota:
 	addiu $sp, $sp, -4
 	sw $ra, 0($sp)
-	
+		
 	lw $t0, Px
 	lw $t1, Py
 	
@@ -723,102 +733,156 @@ moverPelota:
 	lw $a0, Amarillo
 	jal dibujarPelotaConColor
 	
-	jal chequearAzul
-
 	regresarMover:
+	lw $ra, 0($sp)
+	addiu $sp, $sp, 4
+	
+	jr $ra
+	
+chequearAzul:
+	addiu $sp, $sp, -4
+	sw $ra, 0($sp)
+
+	lw $t0, Px
+	lw $t1, Py
+
+	bne $t1, 30, chequearRet
+
+	lw $t2, Barra
+
+	beq $t0, $t2, b1
+	addiu $t2, $t2, 1
+	beq $t0, $t2, b2
+	addiu $t2, $t2, 1
+	beq $t0, $t2, b3
+	addiu $t2, $t2, 1
+	beq $t0, $t2, b4
+	addiu $t2, $t2, 1
+	beq $t0, $t2, b5
+	b chequearRet
+
+	b1:
+	li $t0, 1
+	sw $t0, Vx
+	li $t0, 1
+	sw $t0, Vy
+	b chequearRet
+
+	b2:
+	li $t0, 1
+	sw $t0, Vx
+	li $t0, 2
+	sw $t0, Vy
+	b chequearRet
+
+	b3:
+	li $t0, 0
+	sw $t0, Vx
+	li $t0, 2
+	sw $t0, Vy
+	b chequearRet
+
+	b4:
+	li $t0, -1
+	sw $t0, Vx
+	li $t0, 2
+	sw $t0, Vy
+	b chequearRet
+
+	b5:
+	li $t0, -1
+	sw $t0, Vx
+	li $t0, 1
+	sw $t0, Vy
+	
+	chequearRet:	
+	move $t0, $0
+	move $t1, $0
+	move $t2, $0
+
 	lw $ra, 0($sp)
 	addiu $sp, $sp, 4
 	
 	jr $ra
 
 chequearVerde:
-	lw $t8, Display
-	
-	lw $t0, Px
-	lw $t1, Py
-	
-	addiu $t0, $t0, -1
-	
-	sll $t0, $t0, 7
-	sll $t1, $t1, 2
-	
-	add $t8, $t8, $t0
-	add $t8, $t8, $t1 
-	
-	lw $t9, Verde
-	
-	bne $t8, $t9, regresarCheq
-	addiu $t9, $0, 1
-	sb $t9, Choque	
-	
-	regresarCheq:
-	jr $ra
-	
-chequearAzul:
-	addiu $sp, $sp, -4
+	addiu $sp, $sp, -12
 	sw $ra, 0($sp)
-	
-	lw $t0, Px
-	lw $t1, Py
-	addi $t1, $t1, 1
-	
-	sll $t0, $t0, 2
-	sll $t1, $t1, 7
-	la $t2, Display
-	add $t2, $t2, $t0
-	add $t2, $t2, $t1
-	
-	lw $t3, 0($t2)
-	
-	lw $t4, Azul
-	lw $t5, Azul+4
-	lw $t6, Azul+8
-	lw $t7, Azul+12
-	lw $t8, Azul+16
+	sw $s0, 4($sp)
+	sw $s1, 8($sp)
 
-	b1:
-	bne $t3, $t4, b2
-	li $t0, -1
-	sw $t0, Vx
-	sw $t0, Vy
-	b chequearRet
+	la $t0, Verde
+	lw $t1, 4($t0)
+	lw $t2, 8($t0)
+	lw $t0, 0($t0)
 
-	b2:
-	bne $t3, $t5, b3
-	li $t0, -1
-	sw $t0, Vx
-	li $t0, -2
-	sw $t0, Vy
-	b chequearRet
+	arriba:
+		lw $s0, Px
+		lw $s1, Py
+		la $t3, Display
 
-	b3:
-	bne $t3, $t6, b4
-	li $t0, 0
-	sw $t0, Vx
-	li $t0, -2
-	sw $t0, Vy
-	b chequearRet
+		addiu $s1, $s1, -1
 
-	b4:
-	bne $t3, $t7, b5
-	li $t0, 1
-	sw $t0, Vx
-	li $t0, -2
-	sw $t0, Vy
-	b chequearRet
+		sll $s1, $s1, 7
+		sll $s0, $s0, 2
 
-	b5:
-	bne $t3, $t8, chequearRet
-	li $t0, 1
-	sw $t0, Vx
-	li $t0, -1
-	sw $t0, Vy
+		add $t3, $t3, $s0
+		add $t3, $t3, $s1
 
-	chequearRet:
+		lw $t4, ($t3)
+
+		beq $t4, $t0, coliArriba
+		beq $t4, $t1, coliArriba
+		beq $t4, $t2, coliArriba
+		b abajo
+
+		coliArriba:
+		sw $0, ($t3)
+		li $t0, -1
+		sw $t0, Vy
+		lw $t0, Ladrillos
+		addiu $t0, $t0, -1
+		sw $t0, Ladrillos
+		b verdeRet
+
+	abajo:
+		lw $s0, Px
+		lw $s1, Py
+		la $t3, Display
+
+		addiu $s1, $s1, 1
+
+		sll $s1, $s1, 7
+		sll $s0, $s0, 2
+
+		add $t3, $t3, $s0
+		add $t3, $t3, $s1
+
+		lw $t4, ($t3)
+
+		beq $t4, $t0, coliAbajo
+		beq $t4, $t1, coliAbajo
+		beq $t4, $t2, coliAbajo
+		b verdeRet
+
+		coliAbajo:
+		sw $0, ($t3)
+		li $t0, 1
+		sw $t0, Vy
+		lw $t0, Ladrillos
+		addiu $t0, $t0, -1
+		sw $t0, Ladrillos
+		b verdeRet
+
+	verdeRet:
+
 	lw $ra, 0($sp)
-	addiu $sp, $sp, 4
+	lw $s0, 4($sp)
+	lw $s1, 8($sp)
+	addiu $sp, $sp, 12
 	
 	jr $ra
+
 
 # Recibe en $a0 un color
 dibujarPelotaConColor:
@@ -994,6 +1058,18 @@ ganar:
 	j loopGameWon
 
 perder:
+	# Limpiamos algunos registros
+	move $t0, $0
+	move $t1, $0
+	move $t2, $0
+	move $t3, $0
+	move $t4, $0
+	move $t5, $0
+	move $t6, $0
+	move $t7, $0
+	move $t8, $0
+	move $t9, $0
+
 	li $v0, 33
 	li $a0, 36
 	li $a1, 200
@@ -1042,6 +1118,7 @@ esperar:
 	jr $ra
 
 fin:	la $a0, endmessage
+	li $v0, 4
 	syscall
 	
 	li $v0, 10
