@@ -34,7 +34,7 @@ Timer: .word 0 # Booleano, señal del timer
 Barra: .word 0 # Posición del extremo izquierdo de la barra
 Ladrillos: .word 128 # Cantidad de ladrillos, si llega a 0 se gana el juego
 Choque: .word 0 # Booleano, si ocurrió o no un choque en un momento dado
-T: .word 10 # Velocidad medida en ciclos de reloj (inicial)
+T: .word 200 # Velocidad medida en ciclos de reloj (inicial)
 Incremento: .word 100 # Incremento a la velocidad del juego 
 Vx: .word 0 # Desplazamiento en x de la bola
 Vy: .word 0 # Desplazamiento en y de la bola
@@ -42,9 +42,8 @@ Px: .word 0 # Posición en x de la bola
 Py: .word 0 # Posición en y de la bla
 Vidas: .word 3
 Amarillo: .word 0xFFFF30 # Color amarillo, para la bola
-Azul: .word 0x000077, 0x0000a7, 0x0000f4 # Colores azules, para la barra
+Azul: .word 0x000077, 0x0000a7, 0x0000f4, 0x0000a8, 0x000078 # Colores azules, para la barra
 Verde: .word 0x005000, 0x008000, 0x00b000 # Colores verdes, para los ladrillos
-Negro: .word 0x000000 # Color gris, de fondo
 endmessage: .asciiz "¡HA FINALIZADO EL JUEGO"
 leftmessage: .asciiz "Te moviste a la izquierda"
 rightmessage: .asciiz "Te moviste a la derecha"
@@ -55,13 +54,9 @@ decrementarmessage: .asciiz "Has decrementado la velocidad..."
 
 .text
 setup:	
+	sw $0, Letra
+
 	# Configuramos las variables por si perdió o quiere jugar de nuevo
-	li $v0, 100
-	sw $v0, Incremento
-
-	li $v0, 100 # ¡Ojo!
-	sw $v0, T
-
 	li $v0, 128
 	sw $v0, Ladrillos
 
@@ -417,7 +412,7 @@ splashScreen:
 	
 dibujarTablero:
 	# Coloreamos todo de negro
-	lw $a0, Negro
+	move $a0, $0
 	jal rellenarDeColor
 
 	# Cargamos en $s0 la dirección del Bitmap Display
@@ -429,7 +424,7 @@ dibujarTablero:
 	lw $t3, ($t2)
 	lw $t4, 4($t2)
 	lw $t5, 8($t2)
-	
+
 	# Cargamos los ladrillos. Son 128 ladrillos que hay que colorear
 	# Para poder rellenar 4 hileras
 CargarLadrillos:
@@ -474,12 +469,14 @@ LadrillosCargados:
 	lw $t3, Azul
 	lw $t4, Azul+4
 	lw $t5, Azul+8
+	lw $t6, Azul+12
+	lw $t7, Azul+16
 	
 	sw $t3, 52($s0)
 	sw $t4, 56($s0)
 	sw $t5, 60($s0)
-	sw $t4, 64($s0)
-	sw $t3, 68($s0)
+	sw $t6, 64($s0)
+	sw $t7, 68($s0)
 	
 	# Guardamos la posición en bits de la barra (dada por su extremo izquierdo)
 	li $t9, 13
@@ -665,7 +662,7 @@ redibujarBarra:
 	lw $t3, Azul
 	lw $t4, Azul+4
 	lw $t5, Azul+8
-	lw $t6, Negro
+	move $t6, $0
 	
 	sw $t6, -4($t0)
 	sw $t3, 0($t0)
@@ -690,9 +687,6 @@ moverPelota:
 	lw $t2, Vx
 	lw $t3, Vy
 	
-	move $s3, $t2
-	move $s4, $t3
-	
 	fronteraX0:
 	bgtz $t0, fronteraX128
 	sub $t2, $0, $t2
@@ -713,15 +707,14 @@ moverPelota:
 	
 	fronteraYfin:
 	blt $t1, 31, mover
-	#sub $t3, $0, $t3
-	#sw $t3, Vy
+	sw $0, Letra
 	b perder
 		
 	mover:
 	sub $s1, $t0, $t2
 	sub $s2, $t1, $t3
 	
-	lw $a0, Negro
+	move $a0, $0
 	jal dibujarPelotaConColor
 	
 	sw $s1, Px
@@ -730,28 +723,14 @@ moverPelota:
 	lw $a0, Amarillo
 	jal dibujarPelotaConColor
 	
-	#jal chequearVerde
-	
-	#lw $t9, Choque
-	#bne $t9, 1, regresarMover
-	
-	#lw $t0, Vx
-	#lw $t1, Vy
-	
-	#bne $t1, $s4, regresarMover
-	#sub $t1, $s0, $t1
-	#sw $t1, Vy	
-	#sw $0, Choque
-	# Si no cambié velocidad, la cambio
-	
 	jal chequearAzul
-	
+
 	regresarMover:
 	lw $ra, 0($sp)
 	addiu $sp, $sp, 4
 	
 	jr $ra
-	
+
 chequearVerde:
 	lw $t8, Display
 	
@@ -775,7 +754,6 @@ chequearVerde:
 	regresarCheq:
 	jr $ra
 	
-	
 chequearAzul:
 	addiu $sp, $sp, -4
 	sw $ra, 0($sp)
@@ -784,21 +762,58 @@ chequearAzul:
 	lw $t1, Py
 	addi $t1, $t1, 1
 	
-	sll $t0, $t0, 7
-	sll $t1, $t1, 2
+	sll $t0, $t0, 2
+	sll $t1, $t1, 7
 	la $t2, Display
 	add $t2, $t2, $t0
 	add $t2, $t2, $t1
 	
 	lw $t3, 0($t2)
 	
-	beqz $t3, chequearRet
-	
-	# debo dar distitnas velocidades, esto es debgging
-	lw $t2, Vy
-	sub $t2, $0, $t2
-	sw $t2, Vy
-	
+	lw $t4, Azul
+	lw $t5, Azul+4
+	lw $t6, Azul+8
+	lw $t7, Azul+12
+	lw $t8, Azul+16
+
+	b1:
+	bne $t3, $t4, b2
+	li $t0, -1
+	sw $t0, Vx
+	sw $t0, Vy
+	b chequearRet
+
+	b2:
+	bne $t3, $t5, b3
+	li $t0, -1
+	sw $t0, Vx
+	li $t0, -2
+	sw $t0, Vy
+	b chequearRet
+
+	b3:
+	bne $t3, $t6, b4
+	li $t0, 0
+	sw $t0, Vx
+	li $t0, -2
+	sw $t0, Vy
+	b chequearRet
+
+	b4:
+	bne $t3, $t7, b5
+	li $t0, 1
+	sw $t0, Vx
+	li $t0, -2
+	sw $t0, Vy
+	b chequearRet
+
+	b5:
+	bne $t3, $t8, chequearRet
+	li $t0, 1
+	sw $t0, Vx
+	li $t0, -1
+	sw $t0, Vy
+
 	chequearRet:
 	lw $ra, 0($sp)
 	addiu $sp, $sp, 4

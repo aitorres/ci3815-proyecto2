@@ -12,9 +12,10 @@ bella y sensual sobrenatural
 - [x] Matar con las vidas por underflow
 - [x] Control del T (uU, lL, incremento)
 - [x] A e s t h e t i c s
+- [x] Problema con que la bola se para
 - [ ] Cambiar de posición (reacción) al chocar con barra
 - [ ] Cambiar de posición (reacción) al chocar con bloques
 - [ ] Contar los bloques chocados
-- [ ] Problema con que la bola se para
+- [ ] Reiniciar las vidas con los ladrillos exactos
 - [ ] Informe
 - [ ] Debuggear
