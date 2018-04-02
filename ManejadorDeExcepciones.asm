@@ -58,9 +58,6 @@ timermessage: .asciiz "TIMER!!!"
 	sw $v0 s1 # Not re-entrant and we can't trust $sp
 	sw $a0 s2 # But we need to use these registers
 	
-	mfc0 $a0, $9
-	sw $a0, timsave # Save the timer
-	
 		# Disable interrupts
 	mfc0 $k0 $12
 	andi $k0 0xfffffffe
@@ -116,12 +113,12 @@ Interrupcion:
 	syscall
 	
 	sw $a0, Letra
-	# mfc0 $a0, $9
-	# mfc0 $v0, $11
-	# blt $a0, $v0, retInt  
-	# lw $a0, T
-	# mtc0 $0, $9
-	# mtc0 $a0, $11
+	mfc0 $a0, $9
+	mfc0 $v0, $11
+	blt $a0, $v0, retInt  
+	lw $a0, T
+	mtc0 $0, $9
+	mtc0 $a0, $11
 	b retInt
 	
 	IntTimer:
@@ -149,8 +146,6 @@ ret:
 
 # Restore registers and reset procesor state
 retInt:
-	lw $a0, timsave
-	mtc0 $a0, $9
 	lw $v0 s1 # Restore other registers
 	lw $a0 s2
 .set noat
