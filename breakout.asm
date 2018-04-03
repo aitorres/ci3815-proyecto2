@@ -1,8 +1,9 @@
 ######################### PROYECTO 2 ############################
 # Organización del Computador (CI-3815)
+#
 # Andrés Ignacio Torres (14-11082)
 # Mario Quintero (13-11148)
-
+#
 ######################### INSTRUCCIONES #########################
 # 1) Abrir Tools > Keyboard and Display MMIO Simulator
 # 2) En Tool Control, hacer click en Connect to MIPS
@@ -33,23 +34,22 @@ Pausa: .word 0 # Booleano, 1 si el juego está pausado, 0 si no
 Letra: .word 0 # Letra recibida y no procesada del teclado
 Timer: .word 0 # Booleano, señal del timer
 Barra: .word 0 # Posición del extremo izquierdo de la barra
-Ladrillos: .word 3 # Cantidad de ladrillos, si llega a 0 se gana el juego
-Choque: .word 0 # Booleano, si ocurrió o no un choque en un momento dado
-T: .word 25 # Velocidad medida en ciclos de reloj (inicial)
+Ladrillos: .word 128 # Cantidad de ladrillos, si llega a 0 se gana el juego
+T: .word 300 # Velocidad medida en ciclos de reloj (inicial)
 Incremento: .word 100 # Incremento a la velocidad del juego 
 Vx: .word 0 # Desplazamiento en x de la bola
 Vy: .word 0 # Desplazamiento en y de la bola
 Px: .word 0 # Posición en x de la bola
 Py: .word 0 # Posición en y de la bla
-Vidas: .word 3
+Vidas: .word 3 # Cantidad de vidas en un momento dado, se decrementa al perder
 Amarillo: .word 0xFFFF30 # Color amarillo, para la bola
 Azul: .word 0x000077, 0x0000a7, 0x0000f4, 0x0000a8, 0x000078 # Colores azules, para la barra
 Verde: .word 0x005000, 0x008000, 0x00b000 # Colores verdes, para los ladrillos
-endmessage: .asciiz "¡HA FINALIZADO EL JUEGO"
+endmessage: .asciiz "¡HA FINALIZADO EL JUEGO!"
 leftmessage: .asciiz "Te moviste a la izquierda"
 rightmessage: .asciiz "Te moviste a la derecha"
-pausemessage: .asciiz "Juego en pausa"  
-pressanykey: .asciiz "Press the ANY key to start"
+pausemessage: .asciiz "Juego en pausa (o despausado)"  
+pressanykey: .asciiz "Presiona cualquier tecla para iniciar"
 incrementarmessage: .asciiz "¡Has incrementado la velocidad!"
 decrementarmessage: .asciiz "Has decrementado la velocidad..."
 
@@ -63,6 +63,9 @@ setup:
 	# Configuramos las variables por si perdió o quiere jugar de nuevo
 	li $v0, 128
 	sw $v0, Ladrillos
+
+	li $v0, 300
+	sw $v0, T
 
 	# Preparamos una semilla aleatoria a partir del tiempo
 	li $v0, 30 
@@ -530,6 +533,14 @@ main:
 	noMover:
 	lw $s7, Letra # Cargamos de nuevo la letra en $s7
 	
+	# Branch para la letra A
+	beq $s7, 65, letraA
+	beq $s7, 97, letraA
+	
+	# Branch para la letra D
+	beq $s7, 68, letraD
+	beq $s7, 100, letraD
+
 	# Branch para la letra Q
 	beq $s7, 81, fin
 	beq $s7, 113, fin
@@ -541,14 +552,6 @@ main:
 	# Branch para la letra L
 	beq $s7, 76, decrementar
 	beq $s7, 108, decrementar
-
-	# Branch para la letra A
-	beq $s7, 65, letraA
-	beq $s7, 97, letraA
-	
-	# Branch para la letra D
-	beq $s7, 68, letraD
-	beq $s7, 100, letraD
 	
 	b main # Loop
 	
@@ -592,7 +595,7 @@ decrementar:
 	lw $t0, T # Cargamos T
 	lw $t1, Incremento # Cargamos el incremento
 	sub $t0, $t0, $t1 # Restamos el incremento a T
-	beqz $t0, retornarAMenu # ¡Ojo! No podemos permitir velocidades negativas
+	blez $t0, retornarAMenu # ¡Ojo! No podemos permitir velocidades negativas
 	sw $t0, T # Si no hicimos branch, lamacenamos en T
 	
 	b retornarAMenu
@@ -1124,4 +1127,4 @@ fin:	la $a0, endmessage
 	li $v0, 10
 	syscall
 
-.include "ManejadorDeExcepciones.asm"
+.include "Exceptions.asm"

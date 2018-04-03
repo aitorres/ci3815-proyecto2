@@ -13,9 +13,10 @@ bella y sensual sobrenatural
 - [x] Control del T (uU, lL, incremento)
 - [x] A e s t h e t i c s
 - [x] Problema con que la bola se para
-- [ ] Cambiar de posición (reacción) al chocar con barra
-- [ ] Cambiar de posición (reacción) al chocar con bloques
-- [ ] Contar los bloques chocados
+- [x] Cambiar de posición (reacción) al chocar con barra
+- [x] Cambiar de posición (reacción) al chocar con bloques
+- [x] Contar los bloques chocados
 - [ ] Reiniciar las vidas con los ladrillos exactos
-- [ ] Informe
+- [x] Informe
+- [ ] Bug del color amarillo
 - [ ] Debuggear
